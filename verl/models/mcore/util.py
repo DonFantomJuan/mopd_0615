@@ -93,8 +93,14 @@ def preprocess_packed_seqs(
             # Use Python int, so no GPU→CPU sync in the loop
             if cp_size <= 1:
                 seqlen = seqlens_in_batch_cpu[i]
-                start_idx = cu_seqlens_padded_cpu[i]
-                input_ids_rmpad[start_idx : start_idx + seqlen] = input_ids[i, attention_mask[i]]
+                if attention_mask[i].dtype != torch.bool:
+                    mask = attention_mask[i].bool()
+                    # print("WN2: Change Mask to Bool, mask.sum:", mask.sum())
+                    # print("WN2: mask:", mask)
+                else:
+                    mask = attention_mask[i]
+                input_ids_rmpad[start_idx: start_idx + seqlen] = input_ids[i, mask]
+                # input_ids_rmpad[start_idx : start_idx + seqlen] = input_ids[i, attention_mask[i]]
                 continue
 
             seqlen_padded_i = seqlens_in_batch_padded_cpu[i]
@@ -171,7 +177,12 @@ def postprocess_packed_seqs(
         if cp_size <= 1:
             s = seq_lens_cpu[i]
             start_idx = cu_padded_cpu[i]
-            output_new[i, attention_mask[i]] = output[0][start_idx : start_idx + s]
+            if attention_mask[i].dtype != torch.bool:  ########################################WNWNWNWNWNWNWN
+                mask = attention_mask[i].bool()
+            else:
+                mask = attention_mask[i]
+            output_new[i, mask] = output[0][start_idx: start_idx + s]
+            # output_new[i, attention_mask[i]] = output[0][start_idx : start_idx + s]
             continue
         s_len_padded_chunk = (cu_padded_cpu[i + 1] - cu_padded_cpu[i]) // cp_size
         half_seqlen = s_len_padded_chunk // 2

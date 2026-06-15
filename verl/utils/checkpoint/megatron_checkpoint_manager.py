@@ -762,6 +762,8 @@ class MegatronCheckpointManager(BaseCheckpointManager):
                     for sig in inspect.signature(self.bridge.save_weights).parameters:
                         if sig == "weights_path" or sig == "models":
                             continue
+                        if sig == "distributed_filesystem": # extended_args distributed_filesystem=True应该注释掉
+                            continue
                         if sig in mbridge_config:
                             extended_args[sig] = mbridge_config[sig]
                     self.bridge.save_weights(self.model, hf_ckpt_path, **extended_args)

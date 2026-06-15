@@ -19,7 +19,26 @@ from enum import Enum
 from typing import Any, Optional, Union
 
 import numpy as np
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None
+
+
+def _to_scalar(value: Any) -> Any:
+    if torch is not None and isinstance(value, torch.Tensor):
+        if value.numel() == 1:
+            return value.item()
+        return value.detach().float().mean().item()
+    if isinstance(value, np.ndarray):
+        if value.size == 1:
+            return value.item()
+        return float(np.mean(value))
+    if isinstance(value, (list, tuple)):
+        if len(value) == 0:
+            return 0.0
+        return float(np.mean([_to_scalar(elem) for elem in value]))
+    return value
 
 
 def reduce_metrics(metrics: dict[str, Union["Metric", list[Any]]]) -> dict[str, Any]:
@@ -47,9 +66,10 @@ def reduce_metrics(metrics: dict[str, Union["Metric", list[Any]]]) -> dict[str, 
         {"loss": 2.0, "accuracy": 0.8, "max_reward": 8.0, "min_error": 0.05}
     """
     for key, val in metrics.items():
-        if isinstance(val, Metric):
-            metrics[key] = val.aggregate()
-        elif "max" in key:
+        if not isinstance(val, list):
+            val = [val]
+        val = [_to_scalar(elem) for elem in val]
+        if "max" in key:
             metrics[key] = np.max(val)
         elif "min" in key:
             metrics[key] = np.min(val)
