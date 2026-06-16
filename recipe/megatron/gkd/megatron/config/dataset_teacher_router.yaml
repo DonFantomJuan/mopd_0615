@@ -1,0 +1,20 @@
+datasets:
+  - name: general_instruction
+    train_files:
+      - /home/ma-user/work/nlp/c00931509/code/verl_old/data/general_instruction_follow_0423_formatted2.parquet
+    teacher:
+      name: general_A3B
+      server_ip: 172.16.9.116
+      server_port: 15555
+      n_server_workers: 4
+      distill_weight: 0.5
+
+  - name: aikang_trainset_2k_0506
+    train_files:
+      - /home/ma-user/work/nlp/c00931509/code/verl_old/data/aikang_trainset_2k_0506.parquet
+    teacher:
+      name: jiayi_sft_p1p2_0519
+      server_ip: 172.16.4.26
+      server_port: 15555
+      n_server_workers: 4
+      distill_weight: 0.5
